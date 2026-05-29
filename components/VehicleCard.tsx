@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Vehicle } from '@/types/vehicle'
 
 const brandColors: Record<string, { badge: string; bar: string; text: string }> = {
@@ -127,6 +128,16 @@ export default function VehicleCard({ v }: { v: Vehicle }) {
             </span>
           ))}
         </div>
+      </div>
+
+      {/* Detail link */}
+      <div className="px-5 pb-4 pt-3 border-t border-[#1e2d45]">
+        <Link
+          href={`/vehicles/${v.id}`}
+          className={`flex items-center justify-center gap-2 w-full py-2 rounded-xl border text-[11px] font-semibold tracking-wide transition-all duration-150 ${c.badge} hover:opacity-80`}
+        >
+          Voir la fiche complète →
+        </Link>
       </div>
 
       {/* Price detail toggle */}

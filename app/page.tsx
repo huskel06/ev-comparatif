@@ -1,5 +1,5 @@
 import { vehicles } from '@/data/vehicles'
-import VehicleCard from '@/components/VehicleCard'
+import VehicleGrid from '@/components/VehicleGrid'
 import CompareTable from '@/components/CompareTable'
 
 export default function Home() {
@@ -67,9 +67,9 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Cards */}
-        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-16">
-          {vehicles.map(v => <VehicleCard key={v.id} v={v} />)}
+        {/* Cards with filters */}
+        <section className="mb-16">
+          <VehicleGrid vehicles={vehicles} />
         </section>
 
         {/* Table */}
