@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+:root {
+  --font-display: var(--font-syne);
+  --font-body: var(--font-dm-sans);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: #0e1520;
+}
+
+.font-display { font-family: var(--font-display); }
+.font-body { font-family: var(--font-body); }
