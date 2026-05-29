@@ -83,7 +83,7 @@ function HUDGauge({
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
-        <span className="font-data" style={{ fontSize: 8, letterSpacing: '0.15em', color: '#4A6080', textTransform: 'uppercase' }}>
+        <span className="font-data" style={{ fontSize: 10, letterSpacing: '0.15em', color: '#4A6080', textTransform: 'uppercase' }}>
           {label}
         </span>
         <span className="font-data" style={{ fontSize: 11, fontWeight: 700, color: warn ? '#FF6B00' : '#F0F4FF' }}>
@@ -139,22 +139,38 @@ export default function VehicleCard({ v }: { v: Vehicle }) {
         position: 'relative',
         background: '#0D1F3C',
         border: `1px solid rgba(0,51,160,0.35)`,
-        clipPath: 'polygon(22px 0%, 100% 0%, 100% 100%, 0% 100%, 0% 22px)',
+        clipPath: 'polygon(16px 0%, 100% 0%, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0% 100%, 0% 16px)',
         overflow: 'hidden',
         transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
       }}
       className="group hover:[border-color:rgba(0,212,255,0.45)] hover:shadow-[0_0_32px_rgba(0,212,255,0.12)] hover:translate-y-[-4px]"
     >
-      {/* Diagonal corner accent line */}
-      <svg
-        aria-hidden
-        style={{ position: 'absolute', top: 0, left: 0, width: 26, height: 26, zIndex: 5, pointerEvents: 'none' }}
-      >
-        <line x1="0" y1="21" x2="21" y2="0" stroke={brand.color} strokeWidth="1.2" opacity="0.7" />
+      {/* Top-left corner cut accent line */}
+      <svg aria-hidden style={{ position: 'absolute', top: 0, left: 0, width: 20, height: 20, zIndex: 5, pointerEvents: 'none' }}>
+        <line x1="0" y1="15" x2="15" y2="0" stroke={brand.color} strokeWidth="1.2" opacity="0.6" />
+      </svg>
+      {/* Bottom-right corner cut accent line */}
+      <svg aria-hidden style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, zIndex: 5, pointerEvents: 'none' }}>
+        <line x1="4" y1="19" x2="19" y2="4" stroke={brand.color} strokeWidth="1.2" opacity="0.6" />
       </svg>
 
-      {/* Scan line animation */}
-      <div className="card-scanline" />
+      {/* HUD corner brackets */}
+      <div aria-hidden style={{ position: 'absolute', top: 5, left: 5, width: 8, height: 8, borderTop: '2px solid #00D4FF', borderLeft: '2px solid #00D4FF', zIndex: 6, pointerEvents: 'none', opacity: 0.65 }} />
+      <div aria-hidden style={{ position: 'absolute', top: 5, right: 5, width: 8, height: 8, borderTop: '2px solid #00D4FF', borderRight: '2px solid #00D4FF', zIndex: 6, pointerEvents: 'none', opacity: 0.65 }} />
+      <div aria-hidden style={{ position: 'absolute', bottom: 5, left: 5, width: 8, height: 8, borderBottom: '2px solid #00D4FF', borderLeft: '2px solid #00D4FF', zIndex: 6, pointerEvents: 'none', opacity: 0.65 }} />
+      <div aria-hidden style={{ position: 'absolute', bottom: 5, right: 5, width: 8, height: 8, borderBottom: '2px solid #00D4FF', borderRight: '2px solid #00D4FF', zIndex: 6, pointerEvents: 'none', opacity: 0.65 }} />
+
+      {/* Status indicator — green = offre commerciale, blue = catalogue */}
+      <div
+        className={isDevis ? 'status-pulse-green' : 'status-pulse-blue'}
+        style={{
+          position: 'absolute', top: 8, right: 20, zIndex: 7,
+          width: 6, height: 6,
+          background: isDevis ? '#00FF88' : '#00D4FF',
+          boxShadow: isDevis ? '0 0 6px #00FF88' : '0 0 5px #00D4FF',
+          pointerEvents: 'none',
+        }}
+      />
 
       {/* ── Photo / header zone ─────────────────────────── */}
       {v.imageUrl ? (
@@ -167,10 +183,10 @@ export default function VehicleCard({ v }: { v: Vehicle }) {
             className="group-hover:scale-105"
             onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }}
           />
-          {/* Alpine blue gradient overlay */}
+          {/* Bottom fade — natural blend to card background, no colour alteration */}
           <div style={{
             position: 'absolute', inset: 0,
-            background: `linear-gradient(to bottom, rgba(0,51,160,0.35) 0%, rgba(10,22,40,0.92) 100%)`,
+            background: 'linear-gradient(to top, #0A1628 0%, #0A1628 10%, transparent 50%)',
           }} />
           {/* Brand callsign badge */}
           <div className="font-data" style={{
@@ -217,7 +233,7 @@ export default function VehicleCard({ v }: { v: Vehicle }) {
       )}
 
       {/* ── Model / Price header ──────────────────────── */}
-      <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid rgba(0,51,160,0.3)' }}>
+      <div style={{ padding: '14px 16px 12px', borderBottom: '1px dashed rgba(0,212,255,0.2)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
           <div style={{ minWidth: 0 }}>
             <h2 className="font-display" style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em', color: '#F0F4FF', lineHeight: 1.2 }}>
@@ -333,7 +349,7 @@ export default function VehicleCard({ v }: { v: Vehicle }) {
       </div>
 
       {/* ── Notes ─────────────────────────────────────── */}
-      <div style={{ padding: '0 16px 12px', borderBottom: '1px solid rgba(0,51,160,0.25)' }}>
+      <div style={{ padding: '0 16px 12px', borderBottom: '1px dashed rgba(0,212,255,0.2)' }}>
         <p className="font-body" style={{ fontSize: 10, color: '#4A6080', fontStyle: 'italic', lineHeight: 1.5 }}>
           {v.notes}
         </p>
@@ -360,7 +376,7 @@ export default function VehicleCard({ v }: { v: Vehicle }) {
 
       {/* ── Price detail (devis only) ──────────────────── */}
       {isDevis && (
-        <div style={{ borderTop: '1px solid rgba(0,51,160,0.25)' }}>
+        <div style={{ borderTop: '1px dashed rgba(0,212,255,0.2)' }}>
           <button
             onClick={() => setExpanded(!expanded)}
             className="font-data"

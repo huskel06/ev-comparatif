@@ -96,7 +96,7 @@ export default function Home() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8">
 
         {/* ── Header: instrument cluster bar ──────────────────── */}
-        <header style={{ borderBottom: '1px solid rgba(0,51,160,0.4)', marginBottom: '2.5rem', paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
+        <header style={{ borderBottom: '1px solid rgba(0,51,160,0.4)', marginBottom: 0, paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
 
             {/* Left: callsign */}
@@ -135,6 +135,9 @@ export default function Home() {
             </div>
           </div>
         </header>
+
+        {/* Header scan line — fixed 1px glow separator */}
+        <div aria-hidden style={{ height: 1, background: 'linear-gradient(to right, transparent 0%, rgba(0,212,255,0.45) 50%, transparent 100%)', marginBottom: '2.5rem' }} />
 
         {/* ── Stats row ──────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>

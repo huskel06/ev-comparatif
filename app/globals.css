@@ -71,25 +71,6 @@ body::after {
   animation: shimmer 4s ease-in-out infinite;
 }
 
-/* Card scan line – descends top to bottom every 6s */
-@keyframes scanCard {
-  0%   { top: -2px;    opacity: 0; }
-  5%   { opacity: 1; }
-  95%  { opacity: 1; }
-  100% { top: calc(100% + 2px); opacity: 0; }
-}
-.card-scanline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.35), transparent);
-  top: -2px;
-  animation: scanCard 6s linear infinite;
-  pointer-events: none;
-  z-index: 10;
-}
-
 /* Status dot pulse */
 @keyframes pulseDot {
   0%, 100% { transform: scale(0.8); opacity: 0.4; }
@@ -98,6 +79,14 @@ body::after {
 .pulse-dot {
   animation: pulseDot 1.5s ease-in-out infinite;
 }
+
+/* Card status indicator pulse */
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+.status-pulse-green { animation: statusPulse 2s ease-in-out infinite; }
+.status-pulse-blue  { animation: statusPulse 2.5s ease-in-out infinite; }
 
 /* Best-value cell pulse */
 @keyframes bestPulse {
