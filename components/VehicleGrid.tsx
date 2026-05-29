@@ -1,10 +1,26 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { Brand, Vehicle } from '@/types/vehicle'
 import FilterBar from './FilterBar'
 import VehicleCard from './VehicleCard'
 
+/* ── Stagger variants ────────────────────────────────────────── */
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.15, delayChildren: 0.2 } },
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 32, scale: 0.96, filter: 'blur(4px)' },
+  visible: {
+    opacity: 1, y: 0, scale: 1, filter: 'blur(0px)',
+    transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+  },
+}
+
+/* ── VehicleGrid ─────────────────────────────────────────────── */
 export default function VehicleGrid({ vehicles }: { vehicles: Vehicle[] }) {
   const brands = useMemo(
     () => [...new Set(vehicles.map(v => v.brand))] as Brand[],
@@ -63,19 +79,25 @@ export default function VehicleGrid({ vehicles }: { vehicles: Vehicle[] }) {
           <button
             onClick={reset}
             className="font-data"
-            style={{
-              marginTop: 16, fontSize: 9, color: '#00D4FF', letterSpacing: '0.2em',
-              textTransform: 'uppercase', textDecoration: 'underline', textUnderlineOffset: 4,
-              background: 'none', border: 'none', cursor: 'pointer',
-            }}
+            style={{ marginTop: 16, fontSize: 9, color: '#00D4FF', letterSpacing: '0.2em', textTransform: 'uppercase', textDecoration: 'underline', textUnderlineOffset: 4, background: 'none', border: 'none', cursor: 'pointer' }}
           >
             RÉINITIALISER
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
-          {filtered.map(v => <VehicleCard key={v.id} v={v} />)}
-        </div>
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-80px' }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}
+        >
+          {filtered.map((v, i) => (
+            <motion.div key={v.id} variants={cardVariants}>
+              <VehicleCard v={v} entranceDelay={0.2 + i * 0.15} />
+            </motion.div>
+          ))}
+        </motion.div>
       )}
     </>
   )

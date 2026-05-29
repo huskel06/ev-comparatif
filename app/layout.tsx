@@ -3,6 +3,7 @@ import { Syne, DM_Sans } from 'next/font/google'
 import '@fontsource/jetbrains-mono/400.css'
 import '@fontsource/jetbrains-mono/700.css'
 import './globals.css'
+import PageTransition from '@/components/PageTransition'
 
 const syne = Syne({
   subsets: ['latin'],
@@ -24,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <body className={`${syne.variable} ${dmSans.variable} font-body antialiased`}>
-        {children}
+        <PageTransition>{children}</PageTransition>
       </body>
     </html>
   )
