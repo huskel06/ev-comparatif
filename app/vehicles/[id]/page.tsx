@@ -17,30 +17,29 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 }
 
-const brandColors: Record<string, { badge: string; bar: string; accent: string }> = {
-  xpeng:   { badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', bar: 'bg-emerald-400', accent: 'text-emerald-400' },
-  renault: { badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',       bar: 'bg-amber-400',   accent: 'text-amber-400' },
-  vw:      { badge: 'bg-sky-500/10 text-sky-400 border-sky-500/20',             bar: 'bg-sky-400',     accent: 'text-sky-400' },
-  skoda:   { badge: 'bg-green-500/10 text-green-400 border-green-500/20',       bar: 'bg-green-400',   accent: 'text-green-400' },
-  kia:     { badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20',          bar: 'bg-rose-400',    accent: 'text-rose-400' },
-  audi:    { badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20',    bar: 'bg-purple-400',  accent: 'text-purple-400' },
-  other:   { badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20',       bar: 'bg-slate-400',   accent: 'text-slate-400' },
-}
-
-const brandLabels: Record<string, string> = {
-  xpeng: '⚡ Xpeng', renault: '🔷 Renault', vw: '◎ Volkswagen',
-  skoda: '🍃 Skoda', kia: '🐯 Kia', audi: '◈ Audi', other: '• Autre',
+const BRANDS: Record<string, { color: string; callsign: string }> = {
+  xpeng:   { color: '#00D4FF', callsign: 'XPENG' },
+  renault: { color: '#FF6B00', callsign: 'RENAULT' },
+  vw:      { color: '#60A5FA', callsign: 'VW GROUP' },
+  skoda:   { color: '#4ADE80', callsign: 'ŠKODA' },
+  kia:     { color: '#F87171', callsign: 'KIA' },
+  audi:    { color: '#C084FC', callsign: 'AUDI' },
+  other:   { color: '#94A3B8', callsign: 'UNIT' },
 }
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
 
-interface SpecRowProps { label: string; value: string; highlight?: boolean }
-function SpecRow({ label, value, highlight }: SpecRowProps) {
+function SpecRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-[#1e2d45] last:border-0">
-      <span className="text-[11px] uppercase tracking-widest text-slate-500">{label}</span>
-      <span className={`font-display font-semibold text-sm ${highlight ? 'text-emerald-400' : 'text-slate-200'}`}>
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '10px 0', borderBottom: '1px solid rgba(0,51,160,0.2)',
+    }}>
+      <span className="font-data" style={{ fontSize: 9, letterSpacing: '0.15em', color: '#4A6080', textTransform: 'uppercase' }}>
+        {label}
+      </span>
+      <span className="font-data" style={{ fontSize: 12, fontWeight: 700, color: highlight ? '#00D4FF' : '#F0F4FF' }}>
         {value}
       </span>
     </div>
@@ -52,163 +51,216 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
   const v: Vehicle | undefined = vehicles.find(v => v.id === id)
   if (!v) notFound()
 
-  const c = brandColors[v.brand] ?? brandColors.other
+  const brand = BRANDS[v.brand] ?? BRANDS.other
   const isDevis = v.price.source !== 'catalogue'
 
   return (
-    <div className="min-h-screen bg-[#0e1520] text-slate-100">
+    <div style={{ minHeight: '100vh', background: '#0A1628', color: '#F0F4FF' }}>
       {/* Grid bg */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0 opacity-40"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(148,163,184,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.04) 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
-        }}
-      />
-      <div
-        className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] pointer-events-none z-0"
-        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(79,255,176,0.06) 0%, transparent 70%)' }}
-      />
+      <div aria-hidden style={{
+        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
+        backgroundImage: 'linear-gradient(rgba(0,51,160,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,51,160,0.06) 1px, transparent 1px)',
+        backgroundSize: '48px 48px',
+      }} />
+      <div aria-hidden style={{
+        position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
+        width: 900, height: 240, pointerEvents: 'none', zIndex: 0,
+        background: 'radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.07) 0%, transparent 70%)',
+      }} />
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8 py-10">
+      <div style={{ position: 'relative', zIndex: 10, maxWidth: 960, margin: '0 auto', padding: '2.5rem 1.5rem' }}>
 
-        {/* Back nav */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-emerald-400 transition-colors mb-8 group"
-        >
-          <span className="group-hover:-translate-x-0.5 transition-transform">←</span>
-          Retour au comparatif
+        {/* Back link */}
+        <Link href="/" className="font-data" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          fontSize: 9, letterSpacing: '0.2em', color: '#4A6080', textTransform: 'uppercase',
+          textDecoration: 'none', marginBottom: '2rem',
+          transition: 'color 0.15s',
+        }}>
+          ← RETOUR AU COMPARATIF
         </Link>
 
         {/* Hero image */}
         {v.imageUrl && (
-          <div className="relative h-72 sm:h-96 rounded-2xl overflow-hidden bg-[#131d2e] mb-8 border border-[#1e2d45]">
+          <div style={{
+            position: 'relative', height: 320, borderRadius: 0,
+            overflow: 'hidden', background: '#0D1F3C', marginBottom: '2rem',
+            border: `1px solid ${brand.color}30`,
+            clipPath: 'polygon(32px 0%, 100% 0%, 100% 100%, 0% 100%, 0% 32px)',
+          }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={v.imageUrl}
               alt={`${v.model} ${v.trim}`}
-              className="w-full h-full object-cover object-center"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
             />
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0e1520] to-transparent" />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: `linear-gradient(to bottom, rgba(0,51,160,0.35) 0%, rgba(10,22,40,0.88) 100%)`,
+            }} />
+            {/* Corner diagonal SVG */}
+            <svg aria-hidden style={{ position: 'absolute', top: 0, left: 0, width: 40, height: 40, zIndex: 2 }}>
+              <line x1="0" y1="31" x2="31" y2="0" stroke={brand.color} strokeWidth="1.5" opacity="0.8" />
+            </svg>
+            {/* Callsign badge */}
+            <div className="font-data" style={{
+              position: 'absolute', top: 16, left: 20, zIndex: 3,
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', color: brand.color,
+              background: 'rgba(10,22,40,0.7)', border: `1px solid ${brand.color}40`,
+              padding: '4px 10px', backdropFilter: 'blur(4px)', textTransform: 'uppercase',
+            }}>
+              ◉ {brand.callsign}
+            </div>
             {v.color && (
-              <span className="absolute bottom-4 left-5 text-xs text-slate-400 tracking-wide">{v.color}</span>
+              <span className="font-data" style={{ position: 'absolute', bottom: 16, left: 20, zIndex: 2, fontSize: 10, color: '#F0F4FF80', letterSpacing: '0.1em' }}>
+                {v.color}
+              </span>
             )}
           </div>
         )}
 
-        {/* Title block */}
-        <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
+        {/* Title + price */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
           <div>
-            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold tracking-widest uppercase border mb-3 ${c.badge}`}>
-              {brandLabels[v.brand]}
-            </span>
-            <h1 className="font-display font-black text-3xl sm:text-4xl tracking-tighter text-slate-100 leading-tight">
+            <h1 className="font-display" style={{ fontWeight: 800, fontSize: 'clamp(1.6rem,4vw,2.4rem)', letterSpacing: '-0.03em', color: '#F0F4FF', lineHeight: 1.1 }}>
               {v.model}
             </h1>
-            <p className="text-slate-400 mt-1 text-sm">{v.trim}</p>
+            <p className="font-data" style={{ fontSize: 10, color: '#4A6080', marginTop: 6, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              {v.trim}
+            </p>
           </div>
-          <div className="text-right">
-            <div className="font-display font-black text-3xl tracking-tighter">{fmt(v.price.total)}</div>
-            <div className={`text-[10px] uppercase tracking-widest mt-1 ${isDevis ? 'text-emerald-400' : 'text-slate-500'}`}>
-              {isDevis ? `📄 ${v.price.concession ?? 'offre commerciale'}` : 'prix catalogue'}
+          <div style={{ textAlign: 'right' }}>
+            <div className="font-data" style={{ fontSize: 28, fontWeight: 700, color: '#F0F4FF', letterSpacing: '-0.02em' }}>
+              {fmt(v.price.total)}
+            </div>
+            <div className="font-data" style={{
+              fontSize: 9, letterSpacing: '0.15em', marginTop: 4, textTransform: 'uppercase',
+              color: isDevis ? '#00D4FF' : '#4A6080',
+            }}>
+              {isDevis ? `📄 ${v.price.concession ?? 'offre commerciale'}` : 'PRIX CATALOGUE'}
             </div>
             {v.price.validUntil && (
-              <div className="text-[10px] text-slate-600 mt-0.5">
-                valable jusqu&apos;au {new Date(v.price.validUntil).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+              <div className="font-data" style={{ fontSize: 8, color: '#4A6080', marginTop: 2, letterSpacing: '0.08em' }}>
+                val. {new Date(v.price.validUntil).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
               </div>
             )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
 
           {/* Specs */}
-          <section className="bg-[#131d2e] border border-[#1e2d45] rounded-2xl p-5">
-            <h2 className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-2">Fiche technique</h2>
-            <SpecRow label="Batterie" value={`${v.battery} kWh${v.batteryType ? ` · ${v.batteryType}` : ''}`} />
-            <SpecRow label="Recharge 10→80 %" value={`~${v.chargeTime1080} min`} highlight={v.chargeTime1080 <= 20} />
+          <section style={{ background: '#0D1F3C', border: '1px solid rgba(0,51,160,0.35)', padding: '1.25rem 1.5rem' }}>
+            <div className="font-data" style={{
+              fontSize: 8, letterSpacing: '0.25em', color: brand.color, textTransform: 'uppercase',
+              marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ width: 20, height: 1, background: brand.color, display: 'inline-block' }} />
+              FICHE TECHNIQUE
+            </div>
+            <SpecRow label="Batterie"            value={`${v.battery} kWh${v.batteryType ? ` · ${v.batteryType}` : ''}`} />
+            <SpecRow label="Recharge 10→80 %"    value={`~${v.chargeTime1080} min`} highlight={v.chargeTime1080 <= 20} />
             <SpecRow label="Puissance de charge" value={`${v.chargePower} kW`} />
-            {v.voltage && <SpecRow label="Architecture" value={`${v.voltage} V`} />}
-            <SpecRow label="Autonomie WLTP" value={`${v.rangeWltp} km`} highlight={v.rangeWltp >= 600} />
+            {v.voltage && <SpecRow label="Architecture"    value={`${v.voltage} V`} highlight />}
+            <SpecRow label="Autonomie WLTP"      value={`${v.rangeWltp} km`}    highlight={v.rangeWltp >= 600} />
             <SpecRow label="Autonomie autoroute" value={`~${v.rangeHighway} km`} />
-            <SpecRow label="Puissance moteur" value={`${v.power} ch`} />
-            <SpecRow label="Transmission" value={v.drivetrain} />
+            <SpecRow label="Puissance moteur"    value={`${v.power} ch`} />
+            <SpecRow label="Transmission"        value={v.drivetrain} />
             {v.acceleration && <SpecRow label="0 – 100 km/h" value={`${v.acceleration} s`} />}
           </section>
 
           {/* Price detail */}
-          <section className="bg-[#131d2e] border border-[#1e2d45] rounded-2xl p-5 flex flex-col gap-3">
-            <h2 className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Détail du prix</h2>
+          <section style={{ background: '#0D1F3C', border: '1px solid rgba(0,51,160,0.35)', padding: '1.25rem 1.5rem' }}>
+            <div className="font-data" style={{
+              fontSize: 8, letterSpacing: '0.25em', color: brand.color, textTransform: 'uppercase',
+              marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ width: 20, height: 1, background: brand.color, display: 'inline-block' }} />
+              DÉTAIL DU PRIX
+            </div>
 
-            <div className="space-y-2 text-[12px]">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {v.price.catalogue != null && (
-                <div className="flex justify-between text-slate-400">
-                  <span>Prix catalogue</span>
-                  <span>{fmt(v.price.catalogue)}</span>
+                <div className="font-data" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#4A6080' }}>
+                  <span>Prix catalogue</span><span>{fmt(v.price.catalogue)}</span>
                 </div>
               )}
               {v.price.options != null && (
-                <div className="flex justify-between text-slate-400">
-                  <span>Options</span>
-                  <span>+ {fmt(v.price.options)}</span>
+                <div className="font-data" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#4A6080' }}>
+                  <span>Options</span><span>+ {fmt(v.price.options)}</span>
                 </div>
               )}
               {v.price.supplements != null && (
-                <div className="flex justify-between text-slate-400">
-                  <span>Suppléments</span>
-                  <span>+ {fmt(v.price.supplements)}</span>
+                <div className="font-data" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#4A6080' }}>
+                  <span>Suppléments</span><span>+ {fmt(v.price.supplements)}</span>
                 </div>
               )}
               {v.price.remiseCommerciale != null && (
-                <div className="flex justify-between text-orange-400/80">
-                  <span>Remise commerciale</span>
-                  <span>− {fmt(v.price.remiseCommerciale)}</span>
+                <div className="font-data" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#FF6B00' }}>
+                  <span>Remise commerciale</span><span>− {fmt(v.price.remiseCommerciale)}</span>
                 </div>
               )}
               {v.price.remiseCEE != null && (
-                <div className="flex justify-between text-orange-400/80">
-                  <span>Remise CEE</span>
-                  <span>− {fmt(v.price.remiseCEE)}</span>
+                <div className="font-data" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#FF6B00' }}>
+                  <span>Remise CEE</span><span>− {fmt(v.price.remiseCEE)}</span>
                 </div>
               )}
-              <div className="flex justify-between font-semibold text-slate-100 border-t border-[#1e2d45] pt-3 mt-1 text-sm">
-                <span>Total</span>
-                <span className={c.accent}>{fmt(v.price.total)}</span>
+              <div className="font-data" style={{
+                display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700,
+                color: '#F0F4FF', borderTop: '1px solid rgba(0,51,160,0.3)', paddingTop: 10, marginTop: 4,
+              }}>
+                <span>TOTAL</span>
+                <span style={{ color: brand.color }}>{fmt(v.price.total)}</span>
               </div>
             </div>
 
             {v.extraDiscount && (
-              <div className="mt-1 p-4 rounded-xl bg-amber-500/5 border border-amber-500/15">
-                <p className="text-amber-400 font-semibold text-xs mb-2">💡 {v.extraDiscount.label}</p>
-                <p className="text-[11px] text-slate-400">
+              <div style={{
+                marginTop: 16, padding: '12px',
+                background: 'rgba(255,107,0,0.06)', border: '1px solid rgba(255,107,0,0.2)',
+              }}>
+                <div className="font-data" style={{ fontSize: 9, color: '#FF6B00', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
+                  💡 {v.extraDiscount.label}
+                </div>
+                <div className="font-data" style={{ fontSize: 10, color: '#4A6080' }}>
                   Remise {v.extraDiscount.percent} % = − {fmt(v.price.total * v.extraDiscount.percent / 100)}
-                </p>
-                <p className="text-emerald-400 font-semibold text-sm mt-1.5">
-                  Prix potentiel : {fmt(v.extraDiscount.result)}
-                </p>
+                </div>
+                <div className="font-data" style={{ fontSize: 12, fontWeight: 700, color: '#00D4FF', marginTop: 6 }}>
+                  PRIX POTENTIEL : {fmt(v.extraDiscount.result)}
+                </div>
               </div>
             )}
           </section>
         </div>
 
         {/* Tags + Notes */}
-        <section className="mt-6 bg-[#131d2e] border border-[#1e2d45] rounded-2xl p-5">
-          <h2 className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Notes & équipements</h2>
-          <p className="text-sm text-slate-400 leading-relaxed italic mb-4">{v.notes}</p>
-          <div className="flex flex-wrap gap-1.5">
+        <section style={{ marginTop: '1.5rem', background: '#0D1F3C', border: '1px solid rgba(0,51,160,0.35)', padding: '1.25rem 1.5rem' }}>
+          <div className="font-data" style={{
+            fontSize: 8, letterSpacing: '0.25em', color: brand.color, textTransform: 'uppercase',
+            marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <span style={{ width: 20, height: 1, background: brand.color, display: 'inline-block' }} />
+            ÉQUIPEMENTS &amp; NOTES
+          </div>
+          <p className="font-body" style={{ fontSize: 13, color: '#4A6080', lineHeight: 1.6, fontStyle: 'italic', marginBottom: 12 }}>
+            {v.notes}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {v.tags.map(tag => (
-              <span key={tag} className="text-[10px] px-2.5 py-1 rounded-full bg-[#0e1520] border border-[#1e2d45] text-slate-500">
+              <span key={tag} className="font-data" style={{
+                fontSize: 8, padding: '3px 10px', color: '#4A6080',
+                background: 'rgba(0,51,160,0.1)', border: '1px solid rgba(0,51,160,0.25)',
+                letterSpacing: '0.12em', textTransform: 'uppercase',
+              }}>
                 {tag}
               </span>
             ))}
           </div>
         </section>
 
-        {/* Footer */}
-        <p className="mt-8 text-center text-[10px] text-slate-600">
-          Données mises à jour le{' '}
-          {new Date(v.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+        <p className="font-data" style={{ marginTop: '2rem', textAlign: 'center', fontSize: 8, color: '#4A6080', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          DONNÉES MISES À JOUR LE{' '}
+          {new Date(v.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()}
         </p>
       </div>
     </div>

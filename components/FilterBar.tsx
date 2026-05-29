@@ -2,19 +2,14 @@
 
 import { Brand } from '@/types/vehicle'
 
-const brandLabels: Record<string, string> = {
-  xpeng: '⚡ Xpeng', renault: '🔷 Renault', vw: '◎ Volkswagen',
-  skoda: '🍃 Skoda', kia: '🐯 Kia', audi: '◈ Audi', other: '• Autre',
-}
-
-const brandActive: Record<string, string> = {
-  xpeng:   'bg-emerald-500/15 text-emerald-400 border-emerald-500/40',
-  renault: 'bg-amber-500/15 text-amber-400 border-amber-500/40',
-  vw:      'bg-sky-500/15 text-sky-400 border-sky-500/40',
-  skoda:   'bg-green-500/15 text-green-400 border-green-500/40',
-  kia:     'bg-rose-500/15 text-rose-400 border-rose-500/40',
-  audi:    'bg-purple-500/15 text-purple-400 border-purple-500/40',
-  other:   'bg-slate-500/15 text-slate-400 border-slate-500/40',
+const BRAND_CONFIG: Record<string, { callsign: string; color: string }> = {
+  xpeng:   { callsign: 'XPENG',    color: '#00D4FF' },
+  renault: { callsign: 'RENAULT',  color: '#FF6B00' },
+  vw:      { callsign: 'VW GROUP', color: '#60A5FA' },
+  skoda:   { callsign: 'ŠKODA',    color: '#4ADE80' },
+  kia:     { callsign: 'KIA',      color: '#F87171' },
+  audi:    { callsign: 'AUDI',     color: '#C084FC' },
+  other:   { callsign: 'OTHER',    color: '#94A3B8' },
 }
 
 const fmt = (n: number) =>
@@ -40,43 +35,76 @@ export default function FilterBar({
   const hasFilter = selectedBrands.size < brands.length || priceLimit < maxPossiblePrice
 
   return (
-    <div className="bg-[#131d2e] border border-[#1e2d45] rounded-2xl px-5 py-4 mb-8 flex flex-col gap-4">
+    <div style={{
+      background: '#0D1F3C',
+      border: '1px solid rgba(0,51,160,0.35)',
+      padding: '16px 20px',
+      marginBottom: '1.5rem',
+      display: 'flex', flexDirection: 'column', gap: 16,
+    }}>
       {/* Top row */}
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Filtres</span>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500">
-            <span className="font-bold text-emerald-400">{visibleCount}</span>
-            <span> / {totalCount} véhicule{totalCount > 1 ? 's' : ''}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div className="font-data" style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          fontSize: 8, letterSpacing: '0.25em', color: '#4A6080', textTransform: 'uppercase',
+        }}>
+          <span style={{ color: '#0033A0', fontSize: 12 }}>⧖</span>
+          FILTRES ACTIFS
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span className="font-data" style={{ fontSize: 9, color: '#4A6080', letterSpacing: '0.1em' }}>
+            <span style={{ color: '#00D4FF', fontWeight: 700, fontSize: 13 }}>{visibleCount}</span>
+            {' '}/{' '}{totalCount} VÉHICULE{totalCount > 1 ? 'S' : ''}
           </span>
           {hasFilter && (
             <button
               onClick={onReset}
-              className="text-[10px] uppercase tracking-widest text-slate-600 hover:text-slate-300 transition-colors border border-[#1e2d45] hover:border-[#2e3d55] rounded-full px-3 py-1"
+              className="font-data"
+              style={{
+                fontSize: 8, letterSpacing: '0.2em', color: '#4A6080', textTransform: 'uppercase',
+                border: '1px solid rgba(0,51,160,0.3)', padding: '4px 12px',
+                background: 'none', cursor: 'pointer', transition: 'color 0.15s, border-color 0.15s',
+              }}
             >
-              Réinitialiser
+              RESET
             </button>
           )}
         </div>
       </div>
 
-      {/* Brand pills */}
+      {/* Brand selector */}
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-slate-600 mb-2.5">Marque</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="font-data" style={{ fontSize: 8, letterSpacing: '0.2em', color: '#4A6080', textTransform: 'uppercase', marginBottom: 10 }}>
+          MARQUE
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {brands.map(brand => {
+            const cfg = BRAND_CONFIG[brand] ?? BRAND_CONFIG.other
             const isActive = selectedBrands.has(brand)
             return (
               <button
                 key={brand}
                 onClick={() => onToggleBrand(brand)}
-                className={`text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all duration-150 ${
-                  isActive
-                    ? (brandActive[brand] ?? brandActive.other)
-                    : 'bg-[#0e1520] text-slate-600 border-[#1e2d45] hover:text-slate-400 hover:border-[#2e3d55]'
-                }`}
+                className="font-data"
+                style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase',
+                  padding: '5px 12px',
+                  color: isActive ? cfg.color : '#4A6080',
+                  background: isActive ? `${cfg.color}10` : 'transparent',
+                  border: `1px solid ${isActive ? `${cfg.color}50` : 'rgba(0,51,160,0.25)'}`,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  position: 'relative',
+                }}
               >
-                {brandLabels[brand] ?? brand}
+                {isActive && (
+                  <span style={{
+                    position: 'absolute', top: 3, right: 4,
+                    width: 4, height: 4, borderRadius: '50%',
+                    background: cfg.color, boxShadow: `0 0 4px ${cfg.color}`,
+                  }} />
+                )}
+                {cfg.callsign}
               </button>
             )
           })}
@@ -85,20 +113,45 @@ export default function FilterBar({
 
       {/* Price slider */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] uppercase tracking-widest text-slate-600">Prix maximum</p>
-          <span className="text-xs font-display font-bold text-emerald-400">{fmt(priceLimit)}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div className="font-data" style={{ fontSize: 8, letterSpacing: '0.2em', color: '#4A6080', textTransform: 'uppercase' }}>
+            PRIX MAXIMUM
+          </div>
+          <span className="font-data" style={{ fontSize: 12, fontWeight: 700, color: '#00D4FF', letterSpacing: '0.05em' }}>
+            {fmt(priceLimit)}
+          </span>
         </div>
-        <input
-          type="range"
-          min={minPossiblePrice}
-          max={maxPossiblePrice}
-          step={500}
-          value={priceLimit}
-          onChange={e => onPriceChange(Number(e.target.value))}
-          className="w-full h-1 bg-[#1e2d45] rounded-full appearance-none cursor-pointer accent-emerald-400"
-        />
-        <div className="flex justify-between text-[10px] text-slate-600 mt-1.5">
+        <div style={{ position: 'relative' }}>
+          {/* Track background */}
+          <div style={{
+            height: 4,
+            background: 'rgba(0,51,160,0.3)',
+            position: 'relative',
+            marginBottom: 6,
+          }}>
+            {/* Filled portion */}
+            <div style={{
+              position: 'absolute', left: 0, top: 0, height: '100%',
+              background: 'linear-gradient(90deg, #0033A0, #00D4FF)',
+              width: `${((priceLimit - minPossiblePrice) / (maxPossiblePrice - minPossiblePrice)) * 100}%`,
+              transition: 'width 0.05s',
+            }} />
+          </div>
+          <input
+            type="range"
+            min={minPossiblePrice}
+            max={maxPossiblePrice}
+            step={500}
+            value={priceLimit}
+            onChange={e => onPriceChange(Number(e.target.value))}
+            style={{
+              position: 'absolute', top: '-2px', left: 0, right: 0,
+              width: '100%', height: 8,
+              opacity: 0, cursor: 'pointer',
+            }}
+          />
+        </div>
+        <div className="font-data" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#4A6080', letterSpacing: '0.1em', marginTop: 2 }}>
           <span>{fmt(minPossiblePrice)}</span>
           <span>{fmt(maxPossiblePrice)}</span>
         </div>

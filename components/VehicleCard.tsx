@@ -1,176 +1,432 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { motion, animate, useMotionValue, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import { Vehicle } from '@/types/vehicle'
 
-const brandColors: Record<string, { badge: string; bar: string; text: string }> = {
-  xpeng:  { badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',  bar: 'bg-emerald-400', text: 'text-emerald-400' },
-  renault:{ badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',        bar: 'bg-amber-400',   text: 'text-amber-400' },
-  vw:     { badge: 'bg-sky-500/10 text-sky-400 border-sky-500/20',              bar: 'bg-sky-400',     text: 'text-sky-400' },
-  skoda:  { badge: 'bg-green-500/10 text-green-400 border-green-500/20',        bar: 'bg-green-400',   text: 'text-green-400' },
-  kia:    { badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20',           bar: 'bg-rose-400',    text: 'text-rose-400' },
-  audi:   { badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20',     bar: 'bg-purple-400',  text: 'text-purple-400' },
-  other:  { badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20',        bar: 'bg-slate-400',   text: 'text-slate-400' },
-}
-
-const brandLabels: Record<string, string> = {
-  xpeng: '⚡ Xpeng', renault: '🔷 Renault', vw: '◎ Volkswagen',
-  skoda: '🍃 Skoda', kia: '🐯 Kia', audi: '◈ Audi', other: '• Autre',
+/* ── Brand config ─────────────────────────────────────────── */
+const BRANDS: Record<string, { callsign: string; color: string; glow: string; barColor: string }> = {
+  xpeng:   { callsign: 'XPENG',    color: '#00D4FF', glow: 'rgba(0,212,255,0.18)',   barColor: '#00D4FF' },
+  renault: { callsign: 'RENAULT',  color: '#FF6B00', glow: 'rgba(255,107,0,0.15)',   barColor: '#FF6B00' },
+  vw:      { callsign: 'VW GROUP', color: '#60A5FA', glow: 'rgba(96,165,250,0.15)',  barColor: '#60A5FA' },
+  skoda:   { callsign: 'ŠKODA',    color: '#4ADE80', glow: 'rgba(74,222,128,0.15)', barColor: '#4ADE80' },
+  kia:     { callsign: 'KIA',      color: '#F87171', glow: 'rgba(248,113,113,0.15)', barColor: '#F87171' },
+  audi:    { callsign: 'AUDI',     color: '#C084FC', glow: 'rgba(192,132,252,0.15)', barColor: '#C084FC' },
+  other:   { callsign: 'UNIT',     color: '#94A3B8', glow: 'rgba(148,163,184,0.12)', barColor: '#94A3B8' },
 }
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
 
-interface MetricBarProps {
-  label: string; value: string; pct: number; barClass: string; highlight?: boolean; warn?: boolean
-}
-function MetricBar({ label, value, pct, barClass, highlight, warn }: MetricBarProps) {
+/* ── Odometer slot: each digit scrolls from 0 → final ──────── */
+function OdometerSlot({ char, delay }: { char: string; delay: number }) {
+  if (!/\d/.test(char)) {
+    return (
+      <motion.span
+        style={{ display: 'inline-block' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay, duration: 0.15 }}
+      >
+        {char === ' ' ? ' ' : char}
+      </motion.span>
+    )
+  }
+
+  const d = parseInt(char)
+  const h = 1.15 // em per digit slot
+
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[10px] uppercase tracking-widest text-slate-500">{label}</span>
-      <span className={`font-display font-semibold text-base tracking-tight ${highlight ? 'text-emerald-400' : warn ? 'text-orange-400' : 'text-slate-200'}`}>
-        {value}
-      </span>
-      <div className="h-0.5 bg-slate-700/50 rounded-full overflow-hidden mt-1">
-        <div className={`h-full rounded-full transition-all duration-1000 ${barClass}`} style={{ width: `${pct}%` }} />
+    <span
+      style={{
+        display: 'inline-block',
+        overflow: 'hidden',
+        height: `${h}em`,
+        verticalAlign: 'bottom',
+        lineHeight: `${h}em`,
+      }}
+    >
+      <motion.span
+        style={{ display: 'block' }}
+        initial={{ y: 0 }}
+        animate={{ y: `${-d * h}em` }}
+        transition={{ delay, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+          <span key={n} style={{ display: 'block', height: `${h}em`, lineHeight: `${h}em` }}>{n}</span>
+        ))}
+      </motion.span>
+    </span>
+  )
+}
+
+function PriceOdometer({ price, delay = 0 }: { price: number; delay?: number }) {
+  const formatted = fmt(price)
+  return (
+    <span className="font-data" style={{ display: 'inline-flex', fontWeight: 700 }}>
+      {[...formatted].map((char, i) => (
+        <OdometerSlot key={i} char={char} delay={delay + i * 0.04} />
+      ))}
+    </span>
+  )
+}
+
+/* ── HUD gauge with tick marks + shimmer ────────────────────── */
+function HUDGauge({
+  label, value, pct, color, delay = 0, warn = false,
+}: {
+  label: string; value: string; pct: number; color: string; delay?: number; warn?: boolean
+}) {
+  const ticks = [0, 25, 50, 75, 100]
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+        <span className="font-data" style={{ fontSize: 8, letterSpacing: '0.15em', color: '#4A6080', textTransform: 'uppercase' }}>
+          {label}
+        </span>
+        <span className="font-data" style={{ fontSize: 11, fontWeight: 700, color: warn ? '#FF6B00' : '#F0F4FF' }}>
+          {value}
+        </span>
+      </div>
+      <div style={{
+        position: 'relative', height: 6, background: '#0A1628',
+        border: '1px solid rgba(0,51,160,0.4)', borderRadius: 2, overflow: 'hidden',
+      }}>
+        {ticks.map(t => (
+          <div key={t} style={{
+            position: 'absolute', top: 0, bottom: 0, width: 1,
+            left: `${t}%`, background: 'rgba(0,51,160,0.5)',
+          }} />
+        ))}
+        <motion.div
+          style={{ position: 'absolute', left: 0, top: 0, height: '100%', borderRadius: 2, background: color }}
+          initial={{ width: '0%' }}
+          animate={{ width: `${Math.max(2, pct)}%` }}
+          transition={{ duration: 1.1, ease: 'easeOut', delay }}
+        >
+          <div className="gauge-shimmer" style={{ position: 'absolute', inset: 0 }} />
+        </motion.div>
       </div>
     </div>
   )
 }
 
+/* ── CountUp for non-price numbers ─────────────────────────── */
+function CountUp({ to, suffix = '', delay = 0 }: { to: number; suffix?: string; delay?: number }) {
+  const count = useMotionValue(0)
+  const rounded = useTransform(count, v => `${Math.round(v)}${suffix}`)
+
+  useEffect(() => {
+    const controls = animate(count, to, { duration: 1.5, ease: 'easeOut', delay })
+    return controls.stop
+  }, [to, delay, count])
+
+  return <motion.span>{rounded}</motion.span>
+}
+
+/* ── VehicleCard ─────────────────────────────────────────────── */
 export default function VehicleCard({ v }: { v: Vehicle }) {
   const [expanded, setExpanded] = useState(false)
-  const c = brandColors[v.brand] ?? brandColors.other
+  const brand = BRANDS[v.brand] ?? BRANDS.other
   const isDevis = v.price.source !== 'catalogue'
+  const isSlowCharge = v.chargeTime1080 > 35
 
   return (
-    <article className="group bg-[#131d2e] border border-[#1e2d45] rounded-2xl overflow-hidden hover:-translate-y-1 hover:border-emerald-500/25 hover:shadow-[0_24px_64px_rgba(0,0,0,0.4),0_0_40px_rgba(79,255,176,0.04)] transition-all duration-300">
+    <article
+      style={{
+        position: 'relative',
+        background: '#0D1F3C',
+        border: `1px solid rgba(0,51,160,0.35)`,
+        clipPath: 'polygon(22px 0%, 100% 0%, 100% 100%, 0% 100%, 0% 22px)',
+        overflow: 'hidden',
+        transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
+      }}
+      className="group hover:[border-color:rgba(0,212,255,0.45)] hover:shadow-[0_0_32px_rgba(0,212,255,0.12)] hover:translate-y-[-4px]"
+    >
+      {/* Diagonal corner accent line */}
+      <svg
+        aria-hidden
+        style={{ position: 'absolute', top: 0, left: 0, width: 26, height: 26, zIndex: 5, pointerEvents: 'none' }}
+      >
+        <line x1="0" y1="21" x2="21" y2="0" stroke={brand.color} strokeWidth="1.2" opacity="0.7" />
+      </svg>
 
-      {/* Photo */}
-      {v.imageUrl && (
-        <div className="relative h-52 overflow-hidden bg-[#0e1520]">
+      {/* Scan line animation */}
+      <div className="card-scanline" />
+
+      {/* ── Photo / header zone ─────────────────────────── */}
+      {v.imageUrl ? (
+        <div style={{ position: 'relative', height: 176, overflow: 'hidden', background: '#0A1628' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={v.imageUrl}
             alt={`${v.model} ${v.trim}`}
-            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-            onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', transition: 'transform 0.5s ease' }}
+            className="group-hover:scale-105"
+            onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }}
           />
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#131d2e] to-transparent" />
+          {/* Alpine blue gradient overlay */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: `linear-gradient(to bottom, rgba(0,51,160,0.35) 0%, rgba(10,22,40,0.92) 100%)`,
+          }} />
+          {/* Brand callsign badge */}
+          <div className="font-data" style={{
+            position: 'absolute', top: 12, left: 16, zIndex: 2,
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.2em',
+            color: brand.color, textTransform: 'uppercase',
+            background: 'rgba(10,22,40,0.7)',
+            border: `1px solid ${brand.color}40`,
+            padding: '3px 8px',
+            backdropFilter: 'blur(4px)',
+          }}>
+            ◉ {brand.callsign}
+          </div>
           {v.color && (
-            <span className="absolute bottom-3 left-4 text-[10px] text-slate-400 tracking-wide font-medium">{v.color}</span>
+            <span className="font-data" style={{
+              position: 'absolute', bottom: 10, left: 16, zIndex: 2,
+              fontSize: 9, color: '#F0F4FF80', letterSpacing: '0.1em',
+            }}>
+              {v.color}
+            </span>
           )}
+          {/* Voltage badge */}
+          {v.voltage && (
+            <div className="font-data" style={{
+              position: 'absolute', top: 12, right: 14, zIndex: 2,
+              fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
+              color: '#00D4FF', background: 'rgba(0,212,255,0.1)',
+              border: '1px solid rgba(0,212,255,0.3)',
+              padding: '3px 7px',
+            }}>
+              {v.voltage}V
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ height: 60, background: `linear-gradient(135deg, #0D1F3C, ${brand.color}15)` }}>
+          <div className="font-data" style={{
+            padding: '14px 16px', fontSize: 9, fontWeight: 700,
+            letterSpacing: '0.2em', color: brand.color, textTransform: 'uppercase',
+          }}>
+            ◉ {brand.callsign}
+          </div>
         </div>
       )}
 
-      {/* Header */}
-      <div className="px-5 pt-4 pb-4 border-b border-[#1e2d45] flex items-start justify-between gap-3">
-        <div>
-          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold tracking-widest uppercase border mb-2 ${c.badge}`}>
-            {brandLabels[v.brand]}
-          </span>
-          <h2 className="font-display font-bold text-lg tracking-tight text-slate-100 leading-tight">{v.model}</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{v.trim}</p>
-        </div>
-        <div className="text-right shrink-0">
-          <div className="font-display font-black text-2xl tracking-tighter text-slate-100">{fmt(v.price.total)}</div>
-          <div className={`text-[10px] uppercase tracking-widest mt-0.5 ${isDevis ? 'text-emerald-400' : 'text-slate-500'}`}>
-            {isDevis ? `📄 ${v.price.concession ?? 'offre'}` : 'catalogue'}
+      {/* ── Model / Price header ──────────────────────── */}
+      <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid rgba(0,51,160,0.3)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+          <div style={{ minWidth: 0 }}>
+            <h2 className="font-display" style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em', color: '#F0F4FF', lineHeight: 1.2 }}>
+              {v.model}
+            </h2>
+            <p className="font-data" style={{ fontSize: 9, color: '#4A6080', marginTop: 3, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              {v.trim}
+            </p>
           </div>
-          {v.price.validUntil && (
-            <div className="text-[10px] text-slate-600 mt-0.5">
-              val. {new Date(v.price.validUntil).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontSize: 20, color: '#F0F4FF', lineHeight: 1, textShadow: `0 0 16px ${brand.glow}` }}>
+              <PriceOdometer price={v.price.total} delay={0.2} />
             </div>
-          )}
+            <div className="font-data" style={{
+              fontSize: 8, letterSpacing: '0.15em', marginTop: 4, textTransform: 'uppercase',
+              color: isDevis ? '#00D4FF' : '#4A6080',
+            }}>
+              {isDevis ? `📄 ${v.price.concession ?? 'offre'}` : 'CATALOGUE'}
+            </div>
+            {v.price.validUntil && (
+              <div className="font-data" style={{ fontSize: 8, color: '#4A6080', marginTop: 2, letterSpacing: '0.08em' }}>
+                val. {new Date(v.price.validUntil).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Battery */}
-      <div className="px-5 pt-4 pb-2">
-        <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-2">Capacité batterie</p>
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-5 bg-[#0e1520] border border-[#1e2d45] rounded overflow-hidden">
-            <div
-              className={`h-full flex items-center justify-end pr-2 text-[9px] font-bold text-black/70 transition-all duration-1000 ${c.bar}`}
-              style={{ width: `${(v.battery / 100) * 100}%` }}
-            >
-              {v.battery} kWh
-            </div>
-          </div>
-          <span className="font-display font-bold text-sm text-slate-200 min-w-[56px] text-right">{v.battery} kWh</span>
-        </div>
+      {/* ── Battery gauge ─────────────────────────────── */}
+      <div style={{ padding: '12px 16px 8px' }}>
+        <HUDGauge
+          label={`BATTERIE · ${v.batteryType ?? ''}`}
+          value={`${v.battery} kWh`}
+          pct={(v.battery / 100) * 100}
+          color={brand.barColor}
+          delay={0.1}
+        />
       </div>
 
-      {/* Metrics */}
-      <div className="px-5 py-4 grid grid-cols-2 gap-4">
-        <MetricBar label="⚡ Recharge 10→80%" value={`~${v.chargeTime1080} min`}
+      {/* ── 4-metric grid ─────────────────────────────── */}
+      <div style={{ padding: '8px 16px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px' }}>
+        <HUDGauge
+          label="RECHARGE 10→80%"
+          value={`~${v.chargeTime1080} min`}
           pct={Math.max(5, 100 - (v.chargeTime1080 / 60) * 100)}
-          barClass={v.chargeTime1080 <= 20 ? 'bg-emerald-400' : v.chargeTime1080 <= 35 ? 'bg-amber-400' : 'bg-orange-400'}
-          highlight={v.chargeTime1080 <= 20} warn={v.chargeTime1080 > 35} />
-        <MetricBar label="🔋 Puissance max" value={`${v.chargePower} kW`}
-          pct={(v.chargePower / 500) * 100} barClass="bg-sky-400" />
-        <MetricBar label="🛣 Autonomie WLTP" value={`${v.rangeWltp} km`}
-          pct={(v.rangeWltp / 700) * 100} barClass={c.bar}
-          highlight={v.rangeWltp >= 600} />
-        <MetricBar label="🏎 Autoroute ~120km/h" value={`~${v.rangeHighway} km`}
-          pct={(v.rangeHighway / 700) * 100} barClass={c.bar}
-          warn={v.rangeHighway < 350} />
+          color={isSlowCharge ? '#FF6B00' : '#00D4FF'}
+          delay={0.2}
+          warn={isSlowCharge}
+        />
+        <HUDGauge
+          label="PUISS. CHARGE"
+          value={`${v.chargePower} kW`}
+          pct={(v.chargePower / 500) * 100}
+          color="#0033A0"
+          delay={0.3}
+        />
+        <HUDGauge
+          label="AUTO. WLTP"
+          value={`${v.rangeWltp} km`}
+          pct={(v.rangeWltp / 700) * 100}
+          color={brand.barColor}
+          delay={0.4}
+        />
+        <HUDGauge
+          label="AUTOROUTE ~120"
+          value={`~${v.rangeHighway} km`}
+          pct={(v.rangeHighway / 700) * 100}
+          color="#4A6080"
+          delay={0.5}
+          warn={v.rangeHighway < 350}
+        />
       </div>
 
-      {/* Notes */}
-      <div className="px-5 pb-4 border-t border-[#1e2d45] pt-4">
-        <p className="text-[11px] text-slate-500 italic leading-relaxed">{v.notes}</p>
-        <div className="flex flex-wrap gap-1.5 mt-3">
-          {v.tags.map(tag => (
-            <span key={tag} className="text-[10px] px-2 py-0.5 rounded bg-[#0e1520] border border-[#1e2d45] text-slate-500">
-              {tag}
-            </span>
-          ))}
+      {/* ── Power / transmission row ───────────────────── */}
+      <div style={{
+        margin: '0 16px 12px',
+        padding: '8px 10px',
+        background: 'rgba(0,51,160,0.08)',
+        border: '1px solid rgba(0,51,160,0.2)',
+        display: 'flex', gap: 20, flexWrap: 'wrap',
+      }}>
+        <div>
+          <div className="font-data" style={{ fontSize: 8, color: '#4A6080', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Puissance</div>
+          <div className="font-data" style={{ fontSize: 13, fontWeight: 700, color: brand.color, marginTop: 1 }}>
+            <CountUp to={v.power} suffix=" ch" delay={0.3} />
+          </div>
         </div>
+        <div>
+          <div className="font-data" style={{ fontSize: 8, color: '#4A6080', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Transmission</div>
+          <div className="font-data" style={{ fontSize: 13, fontWeight: 700, color: '#F0F4FF', marginTop: 1 }}>{v.drivetrain}</div>
+        </div>
+        {v.acceleration && (
+          <div>
+            <div className="font-data" style={{ fontSize: 8, color: '#4A6080', letterSpacing: '0.12em', textTransform: 'uppercase' }}>0–100</div>
+            <div className="font-data" style={{ fontSize: 13, fontWeight: 700, color: '#F0F4FF', marginTop: 1 }}>
+              <CountUp to={v.acceleration} suffix=" s" delay={0.4} />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Detail link */}
-      <div className="px-5 pb-4 pt-3 border-t border-[#1e2d45]">
+      {/* ── Tags ──────────────────────────────────────── */}
+      <div style={{ padding: '0 16px 10px', display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+        {v.tags.map(tag => (
+          <span key={tag} className="font-data" style={{
+            fontSize: 8, padding: '2px 8px', letterSpacing: '0.1em',
+            color: '#4A6080', background: 'rgba(0,51,160,0.1)',
+            border: '1px solid rgba(0,51,160,0.25)', textTransform: 'uppercase',
+          }}>
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      {/* ── Notes ─────────────────────────────────────── */}
+      <div style={{ padding: '0 16px 12px', borderBottom: '1px solid rgba(0,51,160,0.25)' }}>
+        <p className="font-body" style={{ fontSize: 10, color: '#4A6080', fontStyle: 'italic', lineHeight: 1.5 }}>
+          {v.notes}
+        </p>
+      </div>
+
+      {/* ── Voir fiche link ────────────────────────────── */}
+      <div style={{ padding: '10px 16px 10px' }}>
         <Link
           href={`/vehicles/${v.id}`}
-          className={`flex items-center justify-center gap-2 w-full py-2 rounded-xl border text-[11px] font-semibold tracking-wide transition-all duration-150 ${c.badge} hover:opacity-80`}
+          className="font-data"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '8px', fontSize: 9, fontWeight: 700, letterSpacing: '0.2em',
+            color: brand.color, textTransform: 'uppercase',
+            border: `1px solid ${brand.color}35`,
+            transition: 'all 0.15s ease',
+            background: `${brand.color}06`,
+            textDecoration: 'none',
+          }}
         >
-          Voir la fiche complète →
+          VOIR FICHE COMPLÈTE <span style={{ fontSize: 10 }}>→</span>
         </Link>
       </div>
 
-      {/* Price detail toggle */}
+      {/* ── Price detail (devis only) ──────────────────── */}
       {isDevis && (
-        <div className="px-5 pb-5 border-t border-[#1e2d45] pt-4">
+        <div style={{ borderTop: '1px solid rgba(0,51,160,0.25)' }}>
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5"
+            className="font-data"
+            style={{
+              width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8,
+              fontSize: 8, letterSpacing: '0.15em', color: '#4A6080', textTransform: 'uppercase',
+              cursor: 'pointer', background: 'none', border: 'none', textAlign: 'left',
+              transition: 'color 0.15s',
+            }}
           >
-            <span className={`inline-block transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}>▶</span>
-            Détail prix offre commerciale
+            <span style={{ display: 'inline-block', transition: 'transform 0.2s', transform: expanded ? 'rotate(90deg)' : 'none', color: '#00D4FF' }}>▶</span>
+            DÉTAIL OFFRE COMMERCIALE
           </button>
 
-          {expanded && (
-            <div className="mt-3 text-[11px] text-slate-500 space-y-1.5">
-              {v.price.catalogue   && <div className="flex justify-between"><span>Prix catalogue</span><span className="text-slate-400">{fmt(v.price.catalogue)}</span></div>}
-              {v.price.options     && <div className="flex justify-between"><span>Options</span><span className="text-slate-400">+{fmt(v.price.options)}</span></div>}
-              {v.price.supplements && <div className="flex justify-between"><span>Suppléments</span><span className="text-slate-400">+{fmt(v.price.supplements)}</span></div>}
-              {v.price.remiseCommerciale && <div className="flex justify-between text-orange-400/80"><span>Participation commerciale</span><span>−{fmt(v.price.remiseCommerciale)}</span></div>}
-              {v.price.remiseCEE   && <div className="flex justify-between text-orange-400/80"><span>Remise CEE</span><span>−{fmt(v.price.remiseCEE)}</span></div>}
-              <div className="flex justify-between font-semibold text-slate-200 border-t border-[#1e2d45] pt-2 mt-1">
-                <span>Total offre</span><span>{fmt(v.price.total)}</span>
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: expanded ? 'auto' : 0, opacity: expanded ? 1 : 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div style={{
+              margin: '0 12px 12px',
+              padding: '12px',
+              background: 'rgba(0,51,160,0.08)',
+              border: '1px solid rgba(0,212,255,0.15)',
+              backdropFilter: 'blur(8px)',
+            }}>
+              {[
+                v.price.catalogue   != null && { label: 'Prix catalogue',         val: fmt(v.price.catalogue),         neg: false },
+                v.price.options     != null && { label: 'Options',                 val: `+ ${fmt(v.price.options!)}`,   neg: false },
+                v.price.supplements != null && { label: 'Suppléments',             val: `+ ${fmt(v.price.supplements!)}`,neg: false },
+                v.price.remiseCommerciale != null && { label: 'Remise commerciale', val: `− ${fmt(v.price.remiseCommerciale!)}`, neg: true },
+                v.price.remiseCEE   != null && { label: 'Remise CEE',              val: `− ${fmt(v.price.remiseCEE!)}`, neg: true },
+              ].filter(Boolean).map((row, i) => {
+                const r = row as { label: string; val: string; neg: boolean }
+                return (
+                  <div key={i} className="font-data" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 6, color: r.neg ? '#FF6B00' : '#4A6080' }}>
+                    <span>{r.label}</span><span>{r.val}</span>
+                  </div>
+                )
+              })}
+              <div className="font-data" style={{
+                display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700,
+                color: '#F0F4FF', borderTop: '1px solid rgba(0,51,160,0.3)', paddingTop: 8, marginTop: 4,
+              }}>
+                <span>TOTAL OFFRE</span><span style={{ color: brand.color }}>{fmt(v.price.total)}</span>
               </div>
 
               {v.extraDiscount && (
-                <div className="mt-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15">
-                  <p className="text-amber-400 font-semibold mb-1.5">💡 {v.extraDiscount.label}</p>
-                  <p>Remise {v.extraDiscount.percent}% = −{fmt(v.price.total * v.extraDiscount.percent / 100)}</p>
-                  <p className="text-emerald-400 font-semibold mt-1">Prix potentiel : {fmt(v.extraDiscount.result)}</p>
+                <div style={{
+                  marginTop: 10, padding: '10px',
+                  background: 'rgba(255,107,0,0.06)', border: '1px solid rgba(255,107,0,0.2)',
+                }}>
+                  <div className="font-data" style={{ fontSize: 9, color: '#FF6B00', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 6 }}>
+                    💡 {v.extraDiscount.label}
+                  </div>
+                  <div className="font-data" style={{ fontSize: 9, color: '#4A6080' }}>
+                    Remise {v.extraDiscount.percent}% = − {fmt(v.price.total * v.extraDiscount.percent / 100)}
+                  </div>
+                  <div className="font-data" style={{ fontSize: 11, fontWeight: 700, color: '#00D4FF', marginTop: 4 }}>
+                    PRIX POTENTIEL : {fmt(v.extraDiscount.result)}
+                  </div>
                 </div>
               )}
             </div>
-          )}
+          </motion.div>
         </div>
       )}
     </article>

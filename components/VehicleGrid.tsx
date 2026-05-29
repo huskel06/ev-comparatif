@@ -55,18 +55,25 @@ export default function VehicleGrid({ vehicles }: { vehicles: Vehicle[] }) {
       />
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-slate-600">
-          <div className="text-4xl mb-3">🔍</div>
-          <p className="text-sm">Aucun véhicule ne correspond aux filtres.</p>
+        <div style={{ textAlign: 'center', padding: '5rem 0' }}>
+          <div style={{ fontSize: 36, marginBottom: 16 }}>⊘</div>
+          <p className="font-data" style={{ fontSize: 10, color: '#4A6080', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+            AUCUN VÉHICULE — FILTRES TROP RESTRICTIFS
+          </p>
           <button
             onClick={reset}
-            className="mt-4 text-xs text-emerald-400 hover:text-emerald-300 transition-colors underline underline-offset-4"
+            className="font-data"
+            style={{
+              marginTop: 16, fontSize: 9, color: '#00D4FF', letterSpacing: '0.2em',
+              textTransform: 'uppercase', textDecoration: 'underline', textUnderlineOffset: 4,
+              background: 'none', border: 'none', cursor: 'pointer',
+            }}
           >
-            Réinitialiser les filtres
+            RÉINITIALISER
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
           {filtered.map(v => <VehicleCard key={v.id} v={v} />)}
         </div>
       )}
