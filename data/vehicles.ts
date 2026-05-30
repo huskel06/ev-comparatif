@@ -2,33 +2,6 @@ import { Vehicle } from '@/types/vehicle'
 
 export const vehicles: Vehicle[] = [
   {
-    id: 'xpeng-g6-performance-black',
-    brand: 'xpeng',
-    model: 'G6 Performance',
-    trim: 'Black Edition',
-    color: 'Noir Minuit',
-    battery: 80.8,
-    batteryType: 'LFP',
-    chargePower: 451,
-    chargeTime1080: 12,
-    rangeWltp: 510,
-    rangeHighway: 300,
-    power: 476,
-    drivetrain: 'AWD',
-    acceleration: 4.1,
-    voltage: 800,
-    price: {
-      catalogue: 50990,
-      total: 50990,
-      source: 'catalogue',
-    },
-    tags: ['AWD', '800V', 'LFP', 'Recharge record'],
-    notes: 'Architecture 800V SiC · Batterie LFP 5C · Jantes 20" noires · Étriers noirs · Badge fumé',
-    imageUrl: 'https://xpengcars.co.uk/wp-content/uploads/2025/11/New-G6-Black-Edition-12-1-1024x567.jpg',
-    updatedAt: '2026-05-29',
-  },
-
-  {
     id: 'scenic-etech-esprit-alpine',
     brand: 'renault',
     model: 'Scénic E-Tech 220',
@@ -61,7 +34,8 @@ export const vehicles: Vehicle[] = [
     },
     tags: ['RWD', 'Solarbay', 'Grande autonomie', 'CEE incluse', 'Offre Renault Cannes'],
     notes: 'Toit Solarbay · Harman Kardon · Pack Augmented Vision & ADAS · Peinture bi-ton · Sellerie maille embossée',
-    imageUrl: 'https://media.renault.com/wp-content/uploads/2024/01/2a0f5fd5dcdf6c1205bd128467ff9efd-l.jpg',
+    // Photo éditoriale 2026 – Gris Schiste Satin / Toit Noir étoilé – Le Nouvel Automobiliste
+    imageUrl: 'https://i0.wp.com/lenouvelautomobiliste.fr/wp-content/uploads/2026/02/Essai-Renault-Scenic-E-Tech-Electric-Esprit-Alpine-LV-Exterieur-844.jpg',
     updatedAt: '2026-05-29',
   },
 
@@ -94,7 +68,8 @@ export const vehicles: Vehicle[] = [
     },
     tags: ['AWD', '4MOTION', 'GTX Sport', 'CEE incluse', 'Offre VGRF Mougins'],
     notes: '4MOTION · 0–100 en 5,4 s · Sellerie ArtVelours · Peinture Noir Ebène métallisée · Devis Julien Caravel 30/05',
-    imageUrl: 'https://ev-database.org/img/auto/Volkswagen_ID4_GTX_2024/Volkswagen_ID4_GTX_2024-01.jpg',
+    // Render officiel imagin.studio – Deep Black Pearl (= Noir Ebène) – vue 3/4 avant
+    imageUrl: 'https://cdn.imagin.studio/getImage?customer=carwow&make=volkswagen&modelFamily=id-4&paintId=deep-black-pearl&angle=03&width=1600',
     updatedAt: '2026-05-30',
   },
 
@@ -127,7 +102,8 @@ export const vehicles: Vehicle[] = [
     },
     tags: ['RWD', 'Pack Maxx', 'Canton Sound', 'CEE incluse', 'Sportline', 'Offre VGRF Mougins'],
     notes: 'Pack Maxx : HUD réalité augmentée · Caméra 360° · Crystal Face 2.0 · DCC+ Suspensions pilotées · Son Canton · Sièges AV réglables él. mémoire · Remote Park Assist · Sellerie suédine noir perforé Sportline',
-    imageUrl: 'https://ev-database.org/img/auto/Skoda_Enyaq_iV_Coupe_85/Skoda_Enyaq_iV_Coupe_85-01.jpg',
+    // Photo éditoriale 2024 – Enyaq Coupé Sportline couleur sombre (Noir Magic Nacre) – testecar.com
+    imageUrl: 'https://testecar.com/wp-content/uploads/2024/10/skoda-enyaq-coupe-vue-face-1024x682.png',
     updatedAt: '2026-05-30',
   },
 ]
