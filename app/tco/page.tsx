@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { motion, useSpring, useTransform } from 'framer-motion'
+import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer, LineChart, Line,
@@ -209,6 +209,7 @@ export default function TcoPage() {
   const [mounted, setMounted] = useState(false)
 
   /* Financement */
+  const [financementActif, setFinancementActif] = useState(true)
   const [apport,     setApport]     = useState(5000)
   const [reprise,    setReprise]    = useState(0)
   const [cash,       setCash]       = useState(0)
@@ -232,7 +233,10 @@ export default function TcoPage() {
   useEffect(() => setMounted(true), [])
 
   /* ── Derived ─────────────────────────────────────────────── */
-  const apportTotal = useMemo(() => apport + reprise + cash, [apport, reprise, cash])
+  const apportTotal = useMemo(
+    () => financementActif ? apport + reprise + cash : reprise + cash,
+    [financementActif, apport, reprise, cash]
+  )
 
   const coutMoyenPondere = useMemo(() =>
     domicileActif
@@ -242,13 +246,23 @@ export default function TcoPage() {
   )
 
   const tcoResults = useMemo(() => vehicles.map(v => {
-    const capital        = Math.max(0, v.price.total - apportTotal)
-    const mensualite     = Math.round(pmt(capital, taux, dureeMois))
     const energieAnnuelle = Math.round(kmAnnuel * (v.consumptionKwh / 100) * coutMoyenPondere)
-    const total5ans      = Math.round(mensualite * dureeMois + energieAnnuelle * 5 + 300 * 5)
-    const coutKm         = total5ans / (kmAnnuel * 5)
+    let capital: number, mensualite: number, total5ans: number
+
+    if (financementActif) {
+      capital   = Math.max(0, v.price.total - apportTotal)
+      mensualite = Math.round(pmt(capital, taux, dureeMois))
+      total5ans  = Math.round(mensualite * dureeMois + energieAnnuelle * 5 + 300 * 5)
+    } else {
+      capital   = 0
+      mensualite = 0
+      const resteVehicule = Math.max(0, v.price.total - apportTotal)
+      total5ans  = Math.round(resteVehicule + energieAnnuelle * 5 + 300 * 5)
+    }
+
+    const coutKm = total5ans / (kmAnnuel * 5)
     return { vehicle: v, capital, mensualite, energieAnnuelle, total5ans, coutKm }
-  }), [apportTotal, taux, dureeMois, kmAnnuel, coutMoyenPondere])
+  }), [financementActif, apportTotal, taux, dureeMois, kmAnnuel, coutMoyenPondere])
 
   const thermiqueResult = useMemo(() => {
     if (!compareThermique) return null
@@ -267,20 +281,26 @@ export default function TcoPage() {
 
   /* ── Chart data ──────────────────────────────────────────── */
   const barData = useMemo(() => {
-    const rows = tcoResults.map(r => ({
-      name: r.vehicle.model.split(' ').slice(0, 2).join(' '),
-      Financement: r.mensualite * dureeMois,
-      Énergie: r.energieAnnuelle * 5,
-      Entretien: 1500,
-    }))
-    if (thermiqueResult) rows.push({
-      name: 'Thermique',
-      Financement: thermiqueResult.mensualite * dureeMois,
-      Énergie: thermiqueResult.carburantAnn * 5,
-      Entretien: entretienThermique * 5,
+    const rows = tcoResults.map(r => {
+      const row: Record<string, number | string> = {
+        name: r.vehicle.model.split(' ').slice(0, 2).join(' '),
+        Énergie: r.energieAnnuelle * 5,
+        Entretien: 1500,
+      }
+      if (financementActif) row['Financement'] = r.mensualite * dureeMois
+      return row
     })
+    if (thermiqueResult) {
+      const th: Record<string, number | string> = {
+        name: 'Thermique',
+        Énergie: thermiqueResult.carburantAnn * 5,
+        Entretien: entretienThermique * 5,
+      }
+      if (financementActif) th['Financement'] = thermiqueResult.mensualite * dureeMois
+      rows.push(th)
+    }
     return rows
-  }, [tcoResults, thermiqueResult, dureeMois, entretienThermique])
+  }, [financementActif, tcoResults, thermiqueResult, dureeMois, entretienThermique])
 
   const lineData = useMemo(() =>
     Array.from({ length: 61 }, (_, m) => {
@@ -336,54 +356,87 @@ export default function TcoPage() {
           <div style={panel}>
             <span style={sectionLabel}>FINANCEMENT</span>
 
-            <HudSlider
-              label="Apport initial"
-              value={apport} min={0} max={20000} step={500}
-              onChange={setApport}
-              display={fmt(apport)}
-            />
+            <Toggle label="FINANCEMENT (CRÉDIT)" active={financementActif} onChange={setFinancementActif} />
+
+            {/* Apport — visible uniquement en mode crédit */}
+            <AnimatePresence initial={false}>
+              {financementActif && (
+                <motion.div
+                  key="apport"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.28, ease: 'easeInOut' }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <HudSlider
+                    label="Apport initial"
+                    value={apport} min={0} max={20000} step={500}
+                    onChange={setApport}
+                    display={fmt(apport)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <NumInput label="Reprise véhicule" value={reprise} onChange={setReprise} />
-            <div style={{ fontFamily: SG, fontSize: 13, fontWeight: 700, color: '#00D4FF', marginTop: -8, marginBottom: 16 }}>
-              Apport total : {fmt(apport)} + {fmt(reprise)} = {fmt(apport + reprise)}
-            </div>
+            {financementActif && (
+              <div style={{ fontFamily: SG, fontSize: 13, fontWeight: 700, color: '#00D4FF', marginTop: -8, marginBottom: 16 }}>
+                Apport total : {fmt(apport)} + {fmt(reprise)} = {fmt(apport + reprise)}
+              </div>
+            )}
 
             <NumInput label="Rajout en cash" value={cash} onChange={setCash} />
             <div style={{ fontFamily: SG, fontSize: 12, color: '#4A6080', marginTop: -8, marginBottom: 16 }}>
-              Capital financé = prix − {fmt(apportTotal)} € / véhicule
+              {financementActif
+                ? `Capital financé = prix − ${fmt(apportTotal)} € / véhicule`
+                : `Reste à payer = prix − ${fmt(reprise)} − ${fmt(cash)} = prix − ${fmt(reprise + cash)} €`}
             </div>
 
-            {/* Durée */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontFamily: SG, fontSize: 12, color: '#4A6080', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
-                DURÉE FINANCEMENT
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {DUREE.map(d => (
-                  <button
-                    key={d}
-                    onClick={() => setDureeMois(d)}
-                    style={{
-                      flex: 1, padding: '7px 4px', fontFamily: SG, fontSize: 12, fontWeight: 700,
-                      letterSpacing: '0.06em', textTransform: 'uppercase' as const,
-                      background: dureeMois === d ? '#00D4FF' : '#0d1f3c',
-                      color: dureeMois === d ? '#0A1628' : '#4A6080',
-                      border: `1px solid ${dureeMois === d ? '#00D4FF' : '#1f2937'}`,
-                      borderRadius: 2, cursor: 'pointer',
-                    }}
-                  >
-                    {d}m
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Durée + taux — visibles uniquement en mode crédit */}
+            <AnimatePresence initial={false}>
+              {financementActif && (
+                <motion.div
+                  key="credit-fields"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.28, ease: 'easeInOut' }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontFamily: SG, fontSize: 12, color: '#4A6080', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
+                      DURÉE FINANCEMENT
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {DUREE.map(d => (
+                        <button
+                          key={d}
+                          onClick={() => setDureeMois(d)}
+                          style={{
+                            flex: 1, padding: '7px 4px', fontFamily: SG, fontSize: 12, fontWeight: 700,
+                            letterSpacing: '0.06em', textTransform: 'uppercase' as const,
+                            background: dureeMois === d ? '#00D4FF' : '#0d1f3c',
+                            color: dureeMois === d ? '#0A1628' : '#4A6080',
+                            border: `1px solid ${dureeMois === d ? '#00D4FF' : '#1f2937'}`,
+                            borderRadius: 2, cursor: 'pointer',
+                          }}
+                        >
+                          {d}m
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-            <HudSlider
-              label="Taux financement"
-              value={taux} min={0} max={10} step={0.1}
-              onChange={setTaux}
-              display={`${taux.toFixed(1)}%`}
-            />
+                  <HudSlider
+                    label="Taux financement"
+                    value={taux} min={0} max={10} step={0.1}
+                    onChange={setTaux}
+                    display={`${taux.toFixed(1)}%`}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <HudSlider
               label="Kilométrage annuel"
@@ -507,7 +560,7 @@ export default function TcoPage() {
                   <YAxis type="category" dataKey="name" tick={{ fill: '#9ca3af', fontSize: 12, fontFamily: SG }} width={100} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,212,255,0.05)' }} />
                   <Legend wrapperStyle={{ fontSize: 12, fontFamily: SG, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em' }} />
-                  <Bar dataKey="Financement" stackId="a" fill="#00D4FF" animationDuration={1200} />
+                  {financementActif && <Bar dataKey="Financement" stackId="a" fill="#00D4FF" animationDuration={1200} />}
                   <Bar dataKey="Énergie"     stackId="a" fill="#fbbf24"  animationDuration={1200} />
                   <Bar dataKey="Entretien"   stackId="a" fill="#4b5563"  animationDuration={1200} />
                 </BarChart>
