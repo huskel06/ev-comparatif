@@ -39,6 +39,7 @@ export interface Vehicle {
   extraDiscount?: ExtraDiscount
   tags: string[]
   notes: string
+  consumptionKwh: number    // kWh/100km combined
   imageUrl?: string
   updatedAt: string
 }

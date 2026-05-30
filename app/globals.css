@@ -78,6 +78,42 @@ body::after {
   animation: bestPulse 2s ease-in-out infinite;
 }
 
+/* HUD range slider */
+.hud-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: #1f2937;
+  outline: none;
+  cursor: pointer;
+}
+.hud-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: #00D4FF;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
+}
+.hud-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: #00D4FF;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
+}
+.hud-slider::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, rgba(0,212,255,0.3), rgba(0,212,255,0.05));
+  border-radius: 2px;
+  height: 4px;
+}
+
 /* Triangle "best" indicator */
 @keyframes triangleFloat {
   0%, 100% { transform: translateY(0); }

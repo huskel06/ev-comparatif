@@ -32,6 +32,7 @@ export const vehicles: Vehicle[] = [
       appliedOn: 'total',
       result: 39258,
     },
+    consumptionKwh: 14.0,
     tags: ['RWD', 'Solarbay', 'Grande autonomie', 'CEE incluse', 'Offre Renault Cannes'],
     notes: 'Toit Solarbay · Harman Kardon · Pack Augmented Vision & ADAS · Peinture bi-ton · Sellerie maille embossée',
     // Photo éditoriale 2026 – Gris Schiste Satin / Toit Noir étoilé – Le Nouvel Automobiliste
@@ -66,6 +67,7 @@ export const vehicles: Vehicle[] = [
       concession: 'VGRF Côte d\'Azur Mougins',
       validUntil: '2026-06-14',
     },
+    consumptionKwh: 16.0,
     tags: ['AWD', '4MOTION', 'GTX Sport', 'CEE incluse', 'Offre VGRF Mougins'],
     notes: '4MOTION · 0–100 en 5,4 s · Sellerie ArtVelours · Peinture Noir Ebène métallisée · Devis Julien Caravel 30/05',
     // Render officiel imagin.studio – Deep Black Pearl (= Noir Ebène) – vue 3/4 avant
@@ -100,6 +102,7 @@ export const vehicles: Vehicle[] = [
       concession: 'VGRF Côte d\'Azur Mougins',
       validUntil: '2026-06-14',
     },
+    consumptionKwh: 15.5,
     tags: ['RWD', 'Pack Maxx', 'Canton Sound', 'CEE incluse', 'Sportline', 'Offre VGRF Mougins'],
     notes: 'Pack Maxx : HUD réalité augmentée · Caméra 360° · Crystal Face 2.0 · DCC+ Suspensions pilotées · Son Canton · Sièges AV réglables él. mémoire · Remote Park Assist · Sellerie suédine noir perforé Sportline',
     // Photo éditoriale 2024 – Enyaq Coupé Sportline couleur sombre (Noir Magic Nacre) – testecar.com
