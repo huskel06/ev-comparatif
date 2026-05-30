@@ -28,6 +28,8 @@ export default function VehicleGrid({ vehicles }: { vehicles: Vehicle[] }) {
   )
   const minPossiblePrice = useMemo(() => Math.min(...vehicles.map(v => v.price.total)), [vehicles])
   const maxPossiblePrice = useMemo(() => Math.max(...vehicles.map(v => v.price.total)), [vehicles])
+  const bestRange        = useMemo(() => Math.max(...vehicles.map(v => v.rangeWltp)),   [vehicles])
+  const lowestPrice      = minPossiblePrice
 
   const [selectedBrands, setSelectedBrands] = useState<Set<Brand>>(new Set(brands))
   const [priceLimit, setPriceLimit] = useState(maxPossiblePrice)
@@ -90,11 +92,11 @@ export default function VehicleGrid({ vehicles }: { vehicles: Vehicle[] }) {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}
         >
-          {filtered.map((v, i) => (
+          {filtered.map((v) => (
             <motion.div key={v.id} variants={cardVariants}>
-              <VehicleCard v={v} entranceDelay={0.2 + i * 0.15} />
+              <VehicleCard v={v} bestRange={bestRange} lowestPrice={lowestPrice} />
             </motion.div>
           ))}
         </motion.div>

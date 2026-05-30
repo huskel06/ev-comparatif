@@ -52,25 +52,6 @@ body::after {
 
 /* ── Keyframes ───────────────────────────────────────────── */
 
-/* Gauge shimmer – runs continuously on filled bars */
-@keyframes shimmer {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(400%); }
-}
-.gauge-shimmer::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.25) 50%,
-    transparent 100%
-  );
-  width: 40%;
-  animation: shimmer 4s ease-in-out infinite;
-}
-
 /* Status dot pulse */
 @keyframes pulseDot {
   0%, 100% { transform: scale(0.8); opacity: 0.4; }

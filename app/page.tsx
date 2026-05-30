@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { vehicles } from '@/data/vehicles'
 import VehicleGrid from '@/components/VehicleGrid'
 import CompareTable from '@/components/CompareTable'
@@ -123,15 +124,20 @@ export default function Home() {
               COMPARATIF <span style={{ color: '#00D4FF' }}>VE</span>
             </h1>
 
-            {/* Right: system status */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <StatusDot />
-              <span className="font-data" style={{ fontSize: 9, letterSpacing: '0.2em', color: '#4A6080', textTransform: 'uppercase', display: 'none' }}>
-                Système en ligne
-              </span>
-              <span className="font-data" style={{ fontSize: 9, letterSpacing: '0.2em', color: '#4A6080', textTransform: 'uppercase' }}>
-                SYSTÈME EN LIGNE
-              </span>
+            {/* Right: nav links + system status */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+              <Link href="/trajet" className="font-data" style={{ fontSize: 11, letterSpacing: '0.15em', color: '#4A6080', textTransform: 'uppercase', textDecoration: 'none' }}>
+                [ TRAJET ]
+              </Link>
+              <Link href="/tco" className="font-data" style={{ fontSize: 11, letterSpacing: '0.15em', color: '#4A6080', textTransform: 'uppercase', textDecoration: 'none' }}>
+                [ TCO ]
+              </Link>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <StatusDot />
+                <span className="font-data" style={{ fontSize: 9, letterSpacing: '0.2em', color: '#4A6080', textTransform: 'uppercase' }}>
+                  SYSTÈME EN LIGNE
+                </span>
+              </div>
             </div>
           </div>
         </header>
@@ -184,28 +190,6 @@ export default function Home() {
             <div style={{ flex: 1, height: 1, background: 'rgba(0,51,160,0.3)' }} />
           </div>
           <CompareTable vehicles={vehicles} />
-        </section>
-
-        {/* ── Add devis zone ─────────────────────────────────── */}
-        <section style={{ marginBottom: '4rem' }}>
-          <div style={{
-            border: '1px dashed rgba(0,51,160,0.4)', borderRadius: 16,
-            padding: '2.5rem', textAlign: 'center',
-            background: 'rgba(13,31,60,0.4)',
-            transition: 'border-color 0.2s',
-          }}>
-            <div style={{ fontSize: 28, marginBottom: 12 }}>📄</div>
-            <h3 className="font-display" style={{ fontWeight: 700, fontSize: 16, marginBottom: 8, color: '#F0F4FF' }}>
-              AJOUTER UN DEVIS
-            </h3>
-            <p className="font-data" style={{ fontSize: 11, color: '#4A6080', letterSpacing: '0.05em', lineHeight: 1.6 }}>
-              Envoie une photo ou PDF à Claude → mise à jour de{' '}
-              <code style={{ color: '#00D4FF', background: 'rgba(0,212,255,0.08)', padding: '2px 6px', borderRadius: 4, fontSize: 10 }}>
-                data/vehicles.ts
-              </code>
-              {' '}→ redéploiement automatique Vercel
-            </p>
-          </div>
         </section>
 
         {/* ── Footer ─────────────────────────────────────────── */}
